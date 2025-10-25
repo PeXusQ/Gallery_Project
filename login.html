@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="login.css">
+    <title>Login - Kotony LaFamilia</title>
+</head>
+<body>
+<div class="scroll-down">SCROLL DOWN
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+    <path d="M16 3C8.832031 3 3 8.832031 3 16s5.832031 13 13 13 13-5.832031 13-13S23.167969 3 16 3zm0 2c6.085938 0 11 4.914063 11 11 0 6.085938-4.914062 11-11 11-6.085937 0-11-4.914062-11-11C5 9.914063 9.914063 5 16 5zm-1 4v10.28125l-4-4-1.40625 1.4375L16 23.125l6.40625-6.40625L21 15.28125l-4 4V9z"/> 
+  </svg>
+</div>
+
+<div class="container"></div>
+
+<div class="modal">
+  <div class="modal-container">
+    <div class="modal-left">
+      <h1 class="modal-title">Kotony LaFamilia</h1>
+      <p class="modal-desc">Witam ekipę Pisarzowic, zaloguj się aby dodać zdjęcia :D</p>
+      
+      <form id="loginForm">
+        <div id="errorMessage" style="color:#c00; display: none;"></div>
+        <div class="input-block">
+          <label for="email" class="input-label">Email</label>
+          <input type="email" name="email" id="email" placeholder="Email" required>
+        </div>
+        <div class="input-block">
+          <label for="password" class="input-label">Hasło</label>
+          <input type="password" name="password" id="password" placeholder="Password" required>
+        </div>
+        <div class="modal-buttons">
+          <a href="#" onclick="showForgotPassword()">Nie pamiętasz hasła?</a>
+          <button type="submit" class="input-button">Zaloguj się</button>
+        </div>
+      </form>
+
+      <p class="sign-up">Nie masz jeszcze konta? <a href="signup.html">Zarejestruj się</a></p>
+    </div>
+
+    <div class="modal-right">
+      <img src="zdj.jpg" alt="Kotony - Photo">
+    </div>
+
+    <button class="icon-button close-button" onclick="window.location.href='index.html'">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+        <path d="M25 3C12.86158 3 3 12.86158 3 25C3 37.13842 12.86158 47 25 47C37.13842 47 47 37.13842 47 25C47 12.86158 37.13842 3 25 3zM25 5C36.05754 5 45 13.94246 45 25C45 36.05754 36.05754 45 25 45C13.94246 45 5 36.05754 5 25C5 13.94246 13.94246 5 25 5zM16.99 15.99A1 1 0 0016.29 17.71L23.59 25 16.29 32.29A1 1 0 1017.71 33.71L25 26.41 32.29 33.71A1 1 0 1033.71 32.29L26.41 25 33.71 17.71A1 1 0 0032.29 16.29L25 23.59 17.71 16.29A1 1 0 0016.99 15.99z"/>
+      </svg>
+    </button>
+  </div>
+  <button class="modal-button">Kliknij tutaj aby zalogować się</button>
+</div>
+
+<script>
+// Check if user is already logged in
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('token');
+    if (token) {
+        // Verify token
+        fetch('/api/auth/verify', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = 'main.html';
+            } else {
+                localStorage.removeItem('token');
+            }
+        })
+        .catch(() => {
+            localStorage.removeItem('token');
+        });
+    }
+});
+
+// Login form handler
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const email = formData.get('email');
+    const password = formData.get('password');
+    
+    const errorMessage = document.getElementById('errorMessage');
+    
+    if (!email || !password) {
+        showError('Podaj email i hasło.');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            localStorage.setItem('token', result.token);
+            window.location.href = 'main.html';
+        } else {
+            showError(result.error);
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        showError('Błąd serwera. Spróbuj ponownie.');
+    }
+});
+
+function showError(message) {
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    errorMessage.style.display = 'block';
+}
+
+function showForgotPassword() {
+    alert('Funkcja resetowania hasła będzie dostępna wkrótce.');
+}
+</script>
+<script src="login.js"></script>
+</body>
+</html>

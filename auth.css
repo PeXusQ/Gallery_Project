@@ -1,0 +1,26 @@
+@import url("login.css");
+
+/* You can add page-specific overrides for forgot/reset below */
+/* Example:
+.modal-title { letter-spacing: 0.3px; }
+*/
+
+/* Place action buttons at the bottom of the left panel */
+.modal-left {
+	display: flex;
+	flex-direction: column;
+}
+
+.modal-left form {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+}
+
+.modal-left .modal-buttons {
+	margin-top: auto;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+

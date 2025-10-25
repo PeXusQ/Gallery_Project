@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="signup.css">
+    <title>Rejestracja - Kotony LaFamilia</title>
+</head>
+<body>
+<div class="container"></div>
+
+<div class="modal"><!-- od razu otwarte -->
+  <div class="modal-container">
+    <div class="modal-left">
+      <h1 class="modal-title">Zarejestruj się</h1>
+      <p class="modal-desc">Podaj swoje dane, aby utworzyć konto.</p>
+      
+      <form id="signupForm">
+        <div id="errorMessage" style="color:#c00; display: none;"></div>
+        <div class="input-block">
+          <label for="username" class="input-label">Nazwa użytkownika</label>
+          <input type="text" name="username" id="username" placeholder="Nazwa użytkownika" required>
+        </div>
+        <div class="input-block">
+          <label for="email" class="input-label">Email</label>
+          <input type="email" name="email" id="email" placeholder="Email" required>
+        </div>
+        <div class="input-block">
+          <label for="password" class="input-label">Hasło</label>
+          <input type="password" name="password" id="password" placeholder="Hasło" required>
+        </div>
+        <div class="input-block">
+          <label for="confirm" class="input-label">Powtórz hasło</label>
+          <input type="password" name="confirm" id="confirm" placeholder="Powtórz hasło" required>
+        </div>
+        <div class="modal-buttons">
+          <a href="login.html">Masz już konto? Zaloguj się</a>
+          <button type="submit" class="input-button">Zarejestruj się</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-right">
+      <img src="zdj2.jpg" alt="Obrazek rejestracji">
+    </div>
+
+    <button class="icon-button close-button" aria-label="Zamknij" onclick="window.location.href='login.html'">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+        <path d="M 25 3 C 12.86158 3 3 12.86158 3 25 C 3 37.13842 12.86158 47 25 47 C 37.13842 47 47 37.13842 47 25 C 47 12.86158 37.13842 3 25 3 z M 25 5 C 36.05754 5 45 13.94246 45 25 C 45 36.05754 36.05754 45 25 45 C 13.94246 45 5 36.05754 5 25 C 5 13.94246 13.94246 5 25 5 z M 16.99 15.99 A 1 1 0 0 0 16.29 17.71 L 23.59 25 L 16.29 32.29 A 1 1 0 1 0 17.71 33.71 L 25 26.41 32.29 33.71 A 1 1 0 1 0 33.71 32.29 L 26.41 25 33.71 17.71 A 1 1 0 0 0 32.29 16.29 L 25 23.59 17.71 16.29 A 1 1 0 0 0 16.99 15.99 z"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+// Check if user is already logged in
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('token');
+    if (token) {
+        // Verify token
+        fetch('/api/auth/verify', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = 'main.html';
+            } else {
+                localStorage.removeItem('token');
+            }
+        })
+        .catch(() => {
+            localStorage.removeItem('token');
+        });
+    }
+});
+
+// Signup form handler
+document.getElementById('signupForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const username = formData.get('username');
+    const email = formData.get('email');
+    const password = formData.get('password');
+    const confirm = formData.get('confirm');
+    
+    const errorMessage = document.getElementById('errorMessage');
+    
+    // Validation
+    if (!username || !email || !password) {
+        showError('Wypełnij wszystkie pola.');
+        return;
+    }
+    
+    if (!isValidEmail(email)) {
+        showError('Nieprawidłowy email.');
+        return;
+    }
+    
+    if (password !== confirm) {
+        showError('Hasła muszą być takie same.');
+        return;
+    }
+    
+    if (password.length < 6) {
+        showError('Hasło musi mieć co najmniej 6 znaków.');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, email, password, confirm })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            localStorage.setItem('token', result.token);
+            window.location.href = 'main.html';
+        } else {
+            showError(result.error);
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        showError('Błąd serwera. Spróbuj ponownie.');
+    }
+});
+
+function showError(message) {
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    errorMessage.style.display = 'block';
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+</script>
+<script src="signup.js"></script>
+</body>
+</html>

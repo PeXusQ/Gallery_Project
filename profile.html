@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="main.css?v=1234567890">
+    <title>Profil - Kotony LaFamilia</title>
+</head>
+<body>
+    <!-- Header z nawigacją -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="profile-photo-section">
+                    <div class="profile-photo-btn">
+                        <img src="zdj_prof.png" alt="Profile Photo" class="profile-photo-img" id="profilePhotoImg">
+                    </div>
+                </div>
+                <h1 class="logo">Kotony LaFamilia</h1>
+            </div>
+            <nav class="nav">
+                <a href="main.html" class="nav-link">Galeria</a>
+                <a href="main.html#albums" class="nav-link">Albumy</a>
+                <a href="main.html#upload" class="nav-link">Dodaj Zdjęcie</a>
+            </nav>
+            
+            <!-- Dropdown menu użytkownika -->
+            <div class="user-menu">
+                <button class="user-button" onclick="toggleUserMenu()">
+                    <div class="user-avatar-container" onclick="event.stopPropagation(); openProfilePhotoModal()">
+                        <img src="zdj_prof.png" alt="Zdjęcie profilowe" class="user-avatar-img" id="userAvatarImg">
+                        <div class="avatar-edit-overlay">
+                            <span class="edit-icon">📷</span>
+                        </div>
+                    </div>
+                    <span class="username" id="usernameDisplay">Użytkownik</span>
+                    <span class="dropdown-arrow">▼</span>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                    <a href="profile.html" class="dropdown-item">Edytuj Profil</a>
+                    <a href="profile.html?section=settings" class="dropdown-item">Ustawienia</a>
+                    <a href="profile.html?section=my-photos" class="dropdown-item">Moje Zdjęcia</a>
+                    <a href="profile.html?section=my-albums" class="dropdown-item">Moje Albumy</a>
+                    <a href="users.html" class="dropdown-item">Użytkownicy</a>
+                    <hr class="dropdown-divider">
+                    <a href="#" class="dropdown-item logout" onclick="logout()">Wyloguj</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Główna zawartość -->
+    <main class="main-content">
+        <div class="container">
+            <div id="alertContainer"></div>
+            
+            <!-- Profile Section -->
+            <section id="profileSection" class="profile-section">
+                <h2>Mój Profil</h2>
+                
+                <div class="profile-info">
+                    <div class="profile-photo-large">
+                        <img src="zdj_prof.png" alt="Zdjęcie profilowe" id="largeProfilePhoto">
+                        <button onclick="openProfilePhotoModal()" class="btn btn-primary">Zmień Zdjęcie</button>
+                    </div>
+                    
+                    <div class="profile-details">
+                        <h3 id="profileUsername">Nazwa użytkownika</h3>
+                        <p id="profileEmail">Email</p>
+                        <p id="profileBio">Bio</p>
+                        <p id="profileJoinDate">Data dołączenia</p>
+                    </div>
+                </div>
+                
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="photosCount">0</span>
+                        <span class="stat-label">Zdjęcia</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="albumsCount">0</span>
+                        <span class="stat-label">Albumy</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settingsSection" class="settings-section" style="display: none;">
+                <h2>Ustawienia</h2>
+                
+                <form id="settingsForm">
+                    <div class="form-group">
+                        <label for="edit_username">Nazwa użytkownika:</label>
+                        <input type="text" id="edit_username" name="username">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_bio">Bio:</label>
+                        <textarea id="edit_bio" name="bio" placeholder="Opisz siebie..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_theme">Motyw:</label>
+                        <select id="edit_theme" name="theme">
+                            <option value="light">Jasny</option>
+                            <option value="dark">Ciemny</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_language">Język:</label>
+                        <select id="edit_language" name="language">
+                            <option value="pl">Polski</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Zapisz Zmiany</button>
+                </form>
+            </section>
+
+            <!-- My Photos Section -->
+            <section id="myPhotosSection" class="my-photos-section" style="display: none;">
+                <h2>Moje Zdjęcia</h2>
+                <div class="photos-grid" id="myPhotosGrid">
+                    <!-- Photos will be loaded by JavaScript -->
+                </div>
+            </section>
+
+            <!-- My Albums Section -->
+            <section id="myAlbumsSection" class="my-albums-section" style="display: none;">
+                <h2>Moje Albumy</h2>
+                <div class="albums-grid" id="myAlbumsGrid">
+                    <!-- Albums will be loaded by JavaScript -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal do zmiany zdjęcia profilowego -->
+    <div id="profilePhotoModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeProfilePhotoModal()">&times;</span>
+            <h2>Zmień Zdjęcie Profilowe</h2>
+            <div class="current-photo-preview">
+                <img src="zdj_prof.png" alt="Aktualne zdjęcie" class="preview-img" id="currentProfilePhoto">
+            </div>
+            <form id="profilePhotoForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="new_profile_photo">Wybierz nowe zdjęcie:</label>
+                    <input type="file" id="new_profile_photo" name="profile_photo" accept="image/*" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Zaktualizuj Zdjęcie</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeProfilePhotoModal()">Anuluj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentSection = 'profile';
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadProfileData();
+            
+            // Check URL parameters for section
+            const urlParams = new URLSearchParams(window.location.search);
+            const section = urlParams.get('section');
+            if (section) {
+                showSection(section);
+            }
+        });
+
+        // Check authentication
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/verify', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.user;
+                    updateUserInterface();
+                } else {
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                localStorage.removeItem('token');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Update user interface
+        function updateUserInterface() {
+            if (currentUser) {
+                document.getElementById('usernameDisplay').textContent = currentUser.username;
+                
+                // Update profile photos
+                if (currentUser.profile_photo) {
+                    document.getElementById('profilePhotoImg').src = currentUser.profile_photo;
+                    document.getElementById('userAvatarImg').src = currentUser.profile_photo;
+                    document.getElementById('largeProfilePhoto').src = currentUser.profile_photo;
+                    document.getElementById('currentProfilePhoto').src = currentUser.profile_photo;
+                }
+
+                // Update theme
+                if (currentUser.theme) {
+                    document.documentElement.setAttribute('data-theme', currentUser.theme);
+                }
+
+                // Update language
+                if (currentUser.language) {
+                    document.documentElement.setAttribute('lang', currentUser.language);
+                }
+            }
+        }
+
+        // Load profile data
+        async function loadProfileData() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/users/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    updateProfileDisplay(user);
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        // Update profile display
+        function updateProfileDisplay(user) {
+            document.getElementById('profileUsername').textContent = user.username;
+            document.getElementById('profileEmail').textContent = user.email;
+            document.getElementById('profileBio').textContent = user.bio || 'Brak opisu';
+            document.getElementById('profileJoinDate').textContent = `Dołączył: ${new Date(user.created_at).toLocaleDateString('pl-PL')}`;
+            
+            // Update form fields
+            document.getElementById('edit_username').value = user.username;
+            document.getElementById('edit_bio').value = user.bio || '';
+            document.getElementById('edit_theme').value = user.theme || 'light';
+            document.getElementById('edit_language').value = user.language || 'pl';
+        }
+
+        // Show section
+        function showSection(section) {
+            // Hide all sections
+            document.getElementById('profileSection').style.display = 'none';
+            document.getElementById('settingsSection').style.display = 'none';
+            document.getElementById('myPhotosSection').style.display = 'none';
+            document.getElementById('myAlbumsSection').style.display = 'none';
+            
+            // Show selected section
+            currentSection = section;
+            switch(section) {
+                case 'settings':
+                    document.getElementById('settingsSection').style.display = 'block';
+                    break;
+                case 'my-photos':
+                    document.getElementById('myPhotosSection').style.display = 'block';
+                    loadMyPhotos();
+                    break;
+                case 'my-albums':
+                    document.getElementById('myAlbumsSection').style.display = 'block';
+                    loadMyAlbums();
+                    break;
+                default:
+                    document.getElementById('profileSection').style.display = 'block';
+                    loadProfileStats();
+            }
+        }
+
+        // Load profile stats
+        async function loadProfileStats() {
+            try {
+                const token = localStorage.getItem('token');
+                
+                // Load photos count
+                const photosResponse = await fetch('/api/users/photos', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (photosResponse.ok) {
+                    const photos = await photosResponse.json();
+                    document.getElementById('photosCount').textContent = photos.length;
+                }
+                
+                // Load albums count
+                const albumsResponse = await fetch('/api/users/albums', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (albumsResponse.ok) {
+                    const albums = await albumsResponse.json();
+                    document.getElementById('albumsCount').textContent = albums.length;
+                }
+            } catch (error) {
+                console.error('Error loading profile stats:', error);
+            }
+        }
+
+        // Load my photos
+        async function loadMyPhotos() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/users/photos', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const photos = await response.json();
+                    updateMyPhotosUI(photos);
+                }
+            } catch (error) {
+                console.error('Error loading my photos:', error);
+            }
+        }
+
+        // Update my photos UI
+        function updateMyPhotosUI(photos) {
+            const photosGrid = document.getElementById('myPhotosGrid');
+            photosGrid.innerHTML = '';
+
+            photos.forEach(photo => {
+                const photoCard = document.createElement('div');
+                photoCard.className = 'photo-card';
+                photoCard.innerHTML = `
+                    <div class="photo-image">
+                        <img src="/uploads/${photo.filename}" alt="${photo.title || 'Bez tytułu'}">
+                    </div>
+                    <div class="photo-info">
+                        <h3>${photo.title || 'Bez tytułu'}</h3>
+                        <p>${photo.description || ''}</p>
+                        <div class="photo-actions">
+                            <button onclick="deletePhoto(${photo.id})" class="btn btn-danger">🗑️ Usuń</button>
+                        </div>
+                    </div>
+                `;
+                photosGrid.appendChild(photoCard);
+            });
+        }
+
+        // Load my albums
+        async function loadMyAlbums() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/users/albums', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const albums = await response.json();
+                    updateMyAlbumsUI(albums);
+                }
+            } catch (error) {
+                console.error('Error loading my albums:', error);
+            }
+        }
+
+        // Update my albums UI
+        function updateMyAlbumsUI(albums) {
+            const albumsGrid = document.getElementById('myAlbumsGrid');
+            albumsGrid.innerHTML = '';
+
+            albums.forEach(album => {
+                const albumCard = document.createElement('div');
+                albumCard.className = 'album-card';
+                albumCard.innerHTML = `
+                    <h3>${album.name}</h3>
+                    <p>Utworzony: ${new Date(album.created_at).toLocaleDateString('pl-PL')}</p>
+                    <div class="album-actions">
+                        ${album.name !== 'Ogólne' ? `<button onclick="deleteAlbum(${album.id})" class="btn btn-danger">🗑️ Usuń</button>` : ''}
+                    </div>
+                `;
+                albumsGrid.appendChild(albumCard);
+            });
+        }
+
+        // Settings form handler
+        document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch('/api/users/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: formData.get('username'),
+                        bio: formData.get('bio'),
+                        theme: formData.get('theme'),
+                        language: formData.get('language')
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    currentUser = result.user;
+                    updateUserInterface();
+                    updateProfileDisplay(result.user);
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Settings update error:', error);
+                showAlert('Błąd podczas aktualizacji ustawień', 'error');
+            }
+        });
+
+        // Profile photo form handler
+        document.getElementById('profilePhotoForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch('/api/photos/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    currentUser.profile_photo = result.profile_photo;
+                    updateUserInterface();
+                    closeProfilePhotoModal();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Profile photo upload error:', error);
+                showAlert('Błąd podczas przesyłania zdjęcia profilowego', 'error');
+            }
+        });
+
+        // Show alert
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Delete photo
+        async function deletePhoto(photoId) {
+            if (confirm('Czy na pewno chcesz usunąć to zdjęcie?')) {
+                try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`/api/photos/${photoId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        showAlert(result.message, 'success');
+                        loadMyPhotos();
+                    } else {
+                        showAlert(result.error, 'error');
+                    }
+                } catch (error) {
+                    console.error('Delete photo error:', error);
+                    showAlert('Błąd podczas usuwania zdjęcia', 'error');
+                }
+            }
+        }
+
+        // Delete album
+        async function deleteAlbum(albumId) {
+            if (confirm('Czy na pewno chcesz usunąć ten album?')) {
+                try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`/api/albums/${albumId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        showAlert(result.message, 'success');
+                        loadMyAlbums();
+                    } else {
+                        showAlert(result.error, 'error');
+                    }
+                } catch (error) {
+                    console.error('Delete album error:', error);
+                    showAlert('Błąd podczas usuwania albumu', 'error');
+                }
+            }
+        }
+
+        // Modal functions
+        function openProfilePhotoModal() {
+            document.getElementById('profilePhotoModal').style.display = 'block';
+        }
+
+        function closeProfilePhotoModal() {
+            document.getElementById('profilePhotoModal').style.display = 'none';
+        }
+
+        // Toggle user menu
+        function toggleUserMenu() {
+            const userMenu = document.querySelector('.user-menu');
+            userMenu.classList.toggle('active');
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="main.css?v=1234567890">
+    <title>Użytkownicy - Kotony LaFamilia</title>
+    <style>
+        .users-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .users-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .user-card {
+            background: var(--light-color);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: var(--shadow-light);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .user-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 1rem;
+            display: block;
+        }
+        
+        .user-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .user-bio {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-style: italic;
+        }
+        
+        .user-join-date {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header z nawigacją -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="profile-photo-section">
+                    <div class="profile-photo-btn">
+                        <img src="zdj_prof.png" alt="Profile Photo" class="profile-photo-img" id="profilePhotoImg">
+                    </div>
+                </div>
+                <h1 class="logo">Kotony LaFamilia</h1>
+            </div>
+            <nav class="nav">
+                <a href="main.html" class="nav-link">Galeria</a>
+                <a href="main.html#albums" class="nav-link">Albumy</a>
+                <a href="main.html#upload" class="nav-link">Dodaj Zdjęcie</a>
+            </nav>
+            
+            <!-- Dropdown menu użytkownika -->
+            <div class="user-menu">
+                <button class="user-button" onclick="toggleUserMenu()">
+                    <div class="user-avatar-container" onclick="event.stopPropagation(); openProfilePhotoModal()">
+                        <img src="zdj_prof.png" alt="Zdjęcie profilowe" class="user-avatar-img" id="userAvatarImg">
+                        <div class="avatar-edit-overlay">
+                            <span class="edit-icon">📷</span>
+                        </div>
+                    </div>
+                    <span class="username" id="usernameDisplay">Użytkownik</span>
+                    <span class="dropdown-arrow">▼</span>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                    <a href="profile.html" class="dropdown-item">Edytuj Profil</a>
+                    <a href="profile.html?section=settings" class="dropdown-item">Ustawienia</a>
+                    <a href="profile.html?section=my-photos" class="dropdown-item">Moje Zdjęcia</a>
+                    <a href="profile.html?section=my-albums" class="dropdown-item">Moje Albumy</a>
+                    <a href="users.html" class="dropdown-item">Użytkownicy</a>
+                    <hr class="dropdown-divider">
+                    <a href="#" class="dropdown-item logout" onclick="logout()">Wyloguj</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Główna zawartość -->
+    <main class="main-content">
+        <div class="users-container">
+            <div class="users-header">
+                <h1>Użytkownicy</h1>
+                <p>Poznaj innych członków społeczności Kotony LaFamilia</p>
+            </div>
+            
+            <div id="alertContainer"></div>
+            
+            <div class="users-grid" id="usersGrid">
+                <!-- Użytkownicy będą ładowani przez JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal do zmiany zdjęcia profilowego -->
+    <div id="profilePhotoModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeProfilePhotoModal()">&times;</span>
+            <h2>Zmień Zdjęcie Profilowe</h2>
+            <div class="current-photo-preview">
+                <img src="zdj_prof.png" alt="Aktualne zdjęcie" class="preview-img" id="currentProfilePhoto">
+            </div>
+            <form id="profilePhotoForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="new_profile_photo">Wybierz nowe zdjęcie:</label>
+                    <input type="file" id="new_profile_photo" name="profile_photo" accept="image/*" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Zaktualizuj Zdjęcie</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeProfilePhotoModal()">Anuluj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let allUsers = [];
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadUsers();
+        });
+
+        // Check authentication
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/verify', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.user;
+                    updateUserInterface();
+                } else {
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                localStorage.removeItem('token');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Update user interface
+        function updateUserInterface() {
+            if (currentUser) {
+                document.getElementById('usernameDisplay').textContent = currentUser.username;
+                
+                // Update profile photos
+                if (currentUser.profile_photo) {
+                    document.getElementById('profilePhotoImg').src = currentUser.profile_photo;
+                    document.getElementById('userAvatarImg').src = currentUser.profile_photo;
+                    document.getElementById('currentProfilePhoto').src = currentUser.profile_photo;
+                }
+
+                // Update theme
+                if (currentUser.theme) {
+                    document.documentElement.setAttribute('data-theme', currentUser.theme);
+                }
+
+                // Update language
+                if (currentUser.language) {
+                    document.documentElement.setAttribute('lang', currentUser.language);
+                }
+            }
+        }
+
+        // Load users
+        async function loadUsers() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/users', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    allUsers = await response.json();
+                    updateUsersUI();
+                } else {
+                    showAlert('Błąd podczas ładowania użytkowników', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showAlert('Błąd podczas ładowania użytkowników', 'error');
+            }
+        }
+
+        // Update users UI
+        function updateUsersUI() {
+            const usersGrid = document.getElementById('usersGrid');
+            usersGrid.innerHTML = '';
+
+            allUsers.forEach(user => {
+                const userCard = document.createElement('div');
+                userCard.className = 'user-card';
+                userCard.innerHTML = `
+                    <img src="${user.profile_photo || 'zdj_prof.png'}" alt="${user.username}" class="user-avatar">
+                    <div class="user-name">${user.username}</div>
+                    <div class="user-bio">${user.bio || 'Brak opisu'}</div>
+                    <div class="user-join-date">Dołączył: ${new Date(user.created_at).toLocaleDateString('pl-PL')}</div>
+                `;
+                usersGrid.appendChild(userCard);
+            });
+        }
+
+        // Profile photo form handler
+        document.getElementById('profilePhotoForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch('/api/photos/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    currentUser.profile_photo = result.profile_photo;
+                    updateUserInterface();
+                    closeProfilePhotoModal();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Profile photo upload error:', error);
+                showAlert('Błąd podczas przesyłania zdjęcia profilowego', 'error');
+            }
+        });
+
+        // Show alert
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Modal functions
+        function openProfilePhotoModal() {
+            document.getElementById('profilePhotoModal').style.display = 'block';
+        }
+
+        function closeProfilePhotoModal() {
+            document.getElementById('profilePhotoModal').style.display = 'none';
+        }
+
+        // Toggle user menu
+        function toggleUserMenu() {
+            const userMenu = document.querySelector('.user-menu');
+            userMenu.classList.toggle('active');
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

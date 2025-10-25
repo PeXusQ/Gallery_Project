@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="main.css?v=1234567890">
+    <title>Galeria Zdjęć - Kotony LaFamilia</title>
+</head>
+<body>
+    <!-- Header z nawigacją -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="profile-photo-section">
+                    <div class="profile-photo-btn">
+                        <img src="zdj_prof.png" alt="Profile Photo" class="profile-photo-img" id="profilePhotoImg">
+                    </div>
+                </div>
+                <h1 class="logo">Kotony LaFamilia</h1>
+            </div>
+            <nav class="nav">
+                <a href="#gallery" class="nav-link">Galeria</a>
+                <a href="#albums" class="nav-link">Albumy</a>
+                <a href="#upload" class="nav-link">Dodaj Zdjęcie</a>
+            </nav>
+            
+            <!-- Dropdown menu użytkownika -->
+            <div class="user-menu">
+                <button class="user-button" onclick="toggleUserMenu()">
+                    <div class="user-avatar-container" onclick="event.stopPropagation(); openProfilePhotoModal()">
+                        <img src="zdj_prof.png" alt="Zdjęcie profilowe" class="user-avatar-img" id="userAvatarImg">
+                        <div class="avatar-edit-overlay">
+                            <span class="edit-icon">📷</span>
+                        </div>
+                    </div>
+                    <span class="username" id="usernameDisplay">Użytkownik</span>
+                    <span class="dropdown-arrow">▼</span>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                    <a href="profile.html" class="dropdown-item">Edytuj Profil</a>
+                    <a href="profile.html?section=settings" class="dropdown-item">Ustawienia</a>
+                    <a href="profile.html?section=my-photos" class="dropdown-item">Moje Zdjęcia</a>
+                    <a href="profile.html?section=my-albums" class="dropdown-item">Moje Albumy</a>
+                    <a href="users.html" class="dropdown-item">Użytkownicy</a>
+                    <hr class="dropdown-divider">
+                    <a href="#" class="dropdown-item logout" onclick="logout()">Wyloguj</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Główna zawartość -->
+    <main class="main-content">
+        <!-- Sekcja dodawania zdjęć -->
+        <section id="upload" class="upload-section">
+            <div class="container">
+                <h2>Dodaj Nowe Zdjęcie</h2>
+                
+                <div id="alertContainer"></div>
+                
+                <form id="uploadForm" enctype="multipart/form-data" class="upload-form">
+                    <div class="form-group">
+                        <label for="photo">Wybierz zdjęcie:</label>
+                        <input type="file" id="photo" name="photo" accept="image/*" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="title">Tytuł:</label>
+                        <input type="text" id="title" name="title" placeholder="Wpisz tytuł zdjęcia">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Opis:</label>
+                        <textarea id="description" name="description" placeholder="Opisz swoje zdjęcie..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="album_id">Album (opcjonalnie):</label>
+                        <select id="album_id" name="album_id">
+                            <option value="">Brak albumu</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Dodaj Zdjęcie</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Sekcja tworzenia albumów -->
+        <section id="albums" class="albums-section">
+            <div class="container">
+                <h2>Zarządzaj Albumami</h2>
+                
+                <div class="albums-grid" id="albumsGrid">
+                    <!-- Albumy będą ładowane przez JavaScript -->
+                </div>
+                
+                <div class="create-album">
+                    <h3>Utwórz Nowy Album</h3>
+                    <form id="createAlbumForm" class="album-form">
+                        <input type="text" id="album_name" name="album_name" placeholder="Nazwa albumu" required>
+                        <button type="submit" class="btn btn-primary">Utwórz Album</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filtry i sortowanie -->
+        <section class="filters-section">
+            <div class="container">
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="sort">Sortuj według:</label>
+                        <select id="sort" onchange="showSortConfirmation()">
+                            <option value="newest">Najnowsze</option>
+                            <option value="oldest">Najstarsze</option>
+                            <option value="most_liked">Najbardziej polubione</option>
+                            <option value="highest_rated">Najwyżej ocenione</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="album-filter">Filtruj album:</label>
+                        <select id="album-filter" onchange="changeAlbumFilter()">
+                            <option value="">Wszystkie zdjęcia</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Sort confirmation -->
+                <div class="sort-confirmation" id="sortConfirmation">
+                    <div class="sort-confirmation-text">
+                        Zastosować nowe sortowanie: <strong id="sortOptionText"></strong>?
+                    </div>
+                    <div class="sort-confirmation-buttons">
+                        <button class="sort-confirm-btn confirm" onclick="confirmSorting()">Zastosuj</button>
+                        <button class="sort-confirm-btn cancel" onclick="cancelSorting()">Anuluj</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Galeria zdjęć -->
+        <section id="gallery" class="gallery-section">
+            <div class="container">
+                <h2>Galeria Zdjęć</h2>
+                
+                <div id="noPhotosMessage" class="no-photos" style="display: none;">
+                    <p>Brak zdjęć do wyświetlenia. Dodaj pierwsze zdjęcie!</p>
+                </div>
+                
+                <div class="photos-grid" id="photosGrid">
+                    <!-- Zdjęcia będą ładowane przez JavaScript -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal zdjęcia -->
+    <div id="photoModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePhotoModal()">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- Modal edycji profilu -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeProfileModal()">&times;</span>
+            <h2>Edytuj Profil</h2>
+            <form id="profileForm">
+                <div class="form-group">
+                    <label for="edit_username">Nazwa użytkownika:</label>
+                    <input type="text" id="edit_username" name="username">
+                </div>
+                <div class="form-group">
+                    <label for="edit_bio">Bio:</label>
+                    <textarea id="edit_bio" name="bio" placeholder="Opisz siebie..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit_avatar">Avatar:</label>
+                    <input type="file" id="edit_avatar" name="avatar" accept="image/*">
+                </div>
+                <button type="submit" class="btn btn-primary">Zapisz Zmiany</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal do zmiany zdjęcia profilowego -->
+    <div id="profilePhotoModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeProfilePhotoModal()">&times;</span>
+            <h2>Zmień Zdjęcie Profilowe</h2>
+            <div class="current-photo-preview">
+                <img src="zdj_prof.png" alt="Aktualne zdjęcie" class="preview-img" id="currentProfilePhoto">
+            </div>
+            <form id="profilePhotoForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="new_profile_photo">Wybierz nowe zdjęcie:</label>
+                    <input type="file" id="new_profile_photo" name="profile_photo" accept="image/*" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Zaktualizuj Zdjęcie</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeProfilePhotoModal()">Anuluj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentPhotos = [];
+        let currentAlbums = [];
+        let pendingSortValue = null;
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadAlbums();
+            loadPhotos();
+        });
+
+        // Check authentication
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/verify', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.user;
+                    updateUserInterface();
+                } else {
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                localStorage.removeItem('token');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Update user interface
+        function updateUserInterface() {
+            if (currentUser) {
+                document.getElementById('usernameDisplay').textContent = currentUser.username;
+                
+                // Update profile photos
+                if (currentUser.profile_photo) {
+                    document.getElementById('profilePhotoImg').src = currentUser.profile_photo;
+                    document.getElementById('userAvatarImg').src = currentUser.profile_photo;
+                    document.getElementById('currentProfilePhoto').src = currentUser.profile_photo;
+                }
+
+                // Update theme
+                if (currentUser.theme) {
+                    document.documentElement.setAttribute('data-theme', currentUser.theme);
+                }
+
+                // Update language
+                if (currentUser.language) {
+                    document.documentElement.setAttribute('lang', currentUser.language);
+                }
+            }
+        }
+
+        // Load albums
+        async function loadAlbums() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/albums', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    currentAlbums = await response.json();
+                    updateAlbumsUI();
+                }
+            } catch (error) {
+                console.error('Error loading albums:', error);
+            }
+        }
+
+        // Update albums UI
+        function updateAlbumsUI() {
+            const albumsGrid = document.getElementById('albumsGrid');
+            const albumSelect = document.getElementById('album_id');
+            const albumFilter = document.getElementById('album-filter');
+
+            // Clear existing options
+            albumSelect.innerHTML = '<option value="">Brak albumu</option>';
+            albumFilter.innerHTML = '<option value="">Wszystkie zdjęcia</option>';
+
+            // Add albums to both selects
+            currentAlbums.forEach(album => {
+                const option1 = document.createElement('option');
+                option1.value = album.id;
+                option1.textContent = album.name;
+                albumSelect.appendChild(option1);
+
+                const option2 = document.createElement('option');
+                option2.value = album.id;
+                option2.textContent = album.name;
+                albumFilter.appendChild(option2);
+            });
+
+            // Update albums grid
+            albumsGrid.innerHTML = '';
+            currentAlbums.forEach(album => {
+                const albumCard = document.createElement('div');
+                albumCard.className = 'album-card';
+                albumCard.innerHTML = `
+                    <h3>${album.name}</h3>
+                    <p>Utworzony: ${new Date(album.created_at).toLocaleDateString('pl-PL')}</p>
+                    <div class="album-actions">
+                        <button onclick="openAlbumModal(${album.id}, '${album.name}')" class="btn btn-view">Zobacz Album</button>
+                        ${album.name !== 'Ogólne' ? `<button onclick="confirmDeleteAlbum(${album.id}, '${album.name}')" class="btn btn-danger">🗑️ Usuń</button>` : ''}
+                    </div>
+                `;
+                albumsGrid.appendChild(albumCard);
+            });
+        }
+
+        // Load photos
+        async function loadPhotos() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const sort = urlParams.get('sort') || 'newest';
+                const album = urlParams.get('album') || '';
+
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/photos?sort=${sort}&album=${album}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    currentPhotos = await response.json();
+                    updatePhotosUI();
+                }
+            } catch (error) {
+                console.error('Error loading photos:', error);
+            }
+        }
+
+        // Update photos UI
+        function updatePhotosUI() {
+            const photosGrid = document.getElementById('photosGrid');
+            const noPhotosMessage = document.getElementById('noPhotosMessage');
+
+            if (currentPhotos.length === 0) {
+                photosGrid.style.display = 'none';
+                noPhotosMessage.style.display = 'block';
+                return;
+            }
+
+            photosGrid.style.display = 'grid';
+            noPhotosMessage.style.display = 'none';
+
+            photosGrid.innerHTML = '';
+            currentPhotos.forEach(photo => {
+                const photoCard = document.createElement('div');
+                photoCard.className = 'photo-card';
+                photoCard.setAttribute('data-photo-id', photo.id);
+                
+                const imagePath = `/uploads/${photo.filename}`;
+                const isOwner = currentUser && photo.user_id === currentUser.id;
+                
+                photoCard.innerHTML = `
+                    <div class="photo-image">
+                        <img src="${imagePath}" 
+                             alt="${photo.title || 'Bez tytułu'}"
+                             onclick="openPhotoModal(${photo.id})">
+                    </div>
+                    
+                    <div class="photo-info">
+                        <h3>${photo.title || 'Bez tytułu'}</h3>
+                        <p class="photo-author">Autor: ${photo.username}</p>
+                        ${photo.album_name ? `<p class="photo-album">Album: ${photo.album_name}</p>` : ''}
+                        <p class="photo-description">${photo.description || ''}</p>
+                        
+                        <div class="photo-stats">
+                            <div class="stat">
+                                <span class="stat-icon">❤️</span>
+                                <span class="stat-count">${photo.likes_count || 0}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-icon">⭐</span>
+                                <span class="stat-count">
+                                    ${photo.avg_rating ? parseFloat(photo.avg_rating).toFixed(1) : '0.0'}
+                                    (${photo.ratings_count || 0})
+                                </span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-icon">💬</span>
+                                <span class="stat-count">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="photo-actions">
+                            <button onclick="likePhoto(${photo.id})" class="btn btn-like">❤️ Polub</button>
+                            <button onclick="openPhotoModal(${photo.id})" class="btn btn-view">Zobacz</button>
+                            ${isOwner ? `<button onclick="confirmDeletePhoto(${photo.id})" class="btn btn-danger">🗑️ Usuń</button>` : ''}
+                        </div>
+                    </div>
+                `;
+                photosGrid.appendChild(photoCard);
+            });
+        }
+
+        // Show alert
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Upload form handler
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch('/api/photos/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    this.reset();
+                    loadPhotos();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showAlert('Błąd podczas przesyłania zdjęcia', 'error');
+            }
+        });
+
+        // Create album form handler
+        document.getElementById('createAlbumForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch('/api/albums', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name: formData.get('album_name') })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    this.reset();
+                    loadAlbums();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Create album error:', error);
+                showAlert('Błąd podczas tworzenia albumu', 'error');
+            }
+        });
+
+        // Profile photo form handler
+        document.getElementById('profilePhotoForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch('/api/photos/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    currentUser.profile_photo = result.profile_photo;
+                    updateUserInterface();
+                    closeProfilePhotoModal();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Profile photo upload error:', error);
+                showAlert('Błąd podczas przesyłania zdjęcia profilowego', 'error');
+            }
+        });
+
+        // Like photo
+        async function likePhoto(photoId) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/photos/like', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ photo_id: photoId })
+                });
+
+                if (response.ok) {
+                    loadPhotos(); // Refresh photos to update like count
+                }
+            } catch (error) {
+                console.error('Like error:', error);
+            }
+        }
+
+        // Delete photo confirmation
+        function confirmDeletePhoto(photoId) {
+            if (confirm('Czy na pewno chcesz usunąć to zdjęcie?')) {
+                deletePhoto(photoId);
+            }
+        }
+
+        // Delete photo
+        async function deletePhoto(photoId) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/photos/${photoId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    loadPhotos();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showAlert('Błąd podczas usuwania zdjęcia', 'error');
+            }
+        }
+
+        // Delete album confirmation
+        function confirmDeleteAlbum(albumId, albumName) {
+            if (confirm(`Czy na pewno chcesz usunąć album "${albumName}"?`)) {
+                deleteAlbum(albumId);
+            }
+        }
+
+        // Delete album
+        async function deleteAlbum(albumId) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/albums/${albumId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    loadAlbums();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Delete album error:', error);
+                showAlert('Błąd podczas usuwania albumu', 'error');
+            }
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+
+        // Modal functions (keeping existing ones from main.js)
+        function openPhotoModal(photoId) {
+            // Implementation from main.js
+            console.log('Open photo modal:', photoId);
+        }
+
+        function closePhotoModal() {
+            // Implementation from main.js
+            console.log('Close photo modal');
+        }
+
+        function openProfilePhotoModal() {
+            document.getElementById('profilePhotoModal').style.display = 'block';
+        }
+
+        function closeProfilePhotoModal() {
+            document.getElementById('profilePhotoModal').style.display = 'none';
+        }
+
+        function openProfileModal() {
+            document.getElementById('profileModal').style.display = 'block';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        function openAlbumModal(albumId, albumName) {
+            // Implementation for album modal
+            console.log('Open album modal:', albumId, albumName);
+        }
+
+        // Sort and filter functions
+        function showSortConfirmation() {
+            const sortSelect = document.getElementById('sort');
+            const confirmation = document.getElementById('sortConfirmation');
+            const optionText = document.getElementById('sortOptionText');
+            
+            pendingSortValue = sortSelect.value;
+            const selectedOption = sortSelect.options[sortSelect.selectedIndex];
+            optionText.textContent = selectedOption.textContent;
+            confirmation.classList.add('show');
+            
+            const currentSort = new URLSearchParams(window.location.search).get('sort') || 'newest';
+            sortSelect.value = currentSort;
+        }
+
+        function confirmSorting() {
+            if (pendingSortValue) {
+                const currentUrl = new URL(window.location);
+                currentUrl.searchParams.set('sort', pendingSortValue);
+                window.location.href = currentUrl.toString();
+            }
+        }
+
+        function cancelSorting() {
+            const confirmation = document.getElementById('sortConfirmation');
+            confirmation.classList.remove('show');
+            pendingSortValue = null;
+        }
+
+        function changeAlbumFilter() {
+            const albumSelect = document.getElementById('album-filter');
+            const currentUrl = new URL(window.location);
+            if (albumSelect.value) {
+                currentUrl.searchParams.set('album', albumSelect.value);
+            } else {
+                currentUrl.searchParams.delete('album');
+            }
+            window.location.href = currentUrl.toString();
+        }
+
+        // Toggle user menu (keeping from main.js)
+        function toggleUserMenu() {
+            const userMenu = document.querySelector('.user-menu');
+            userMenu.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
